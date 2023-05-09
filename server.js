@@ -10,22 +10,46 @@ const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 
 const openai = new OpenAIApi(configuration);
 
+const GLOBAL_TOKEN_LIMIT = 5000;
+let token_usage = 0;
+
 app.get("/", function (req, res) {
-  res.sendFile(`${__dirname}/index.html`);
+  res.sendFile(`index.html`, { root: __dirname });
 });
 
 app.post("/api/ai", function (req, res) {
-  const completion = openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: req.body.content }],
-  });
+  if (token_usage >= GLOBAL_TOKEN_LIMIT) {
+    res.status(500).send("Token limit exceeded.");
+    return;
+  }
+  try {
+    const context = req.body.context;
 
-  completion.then((response) => {
-    res.send({
-      output: response.data.choices[0].message.content,
-      tokens: response.data.usage.total_tokens,
+    const completion = openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: context,
     });
-  });
+
+    completion.then((response) => {
+      res.send({
+        output: response.data.choices[0].message.content,
+        tokens: response.data.usage.total_tokens,
+      });
+      token_usage += response.data.usage.total_tokens;
+      console.log(`Token usage: ${token_usage}`);
+    });
+  } catch {
+    res.status(500).send("There was an error.");
+  }
+});
+
+app.get("/api/upper", function (req, res) {
+  console.log(req.body);
+  try {
+    res.send({ response: req.body.text.toUpperCase() });
+  } catch {
+    res.send({ response: "Error" });
+  }
 });
 
 app.post("/api/upper", function (req, res) {
@@ -38,7 +62,7 @@ app.post("/api/upper", function (req, res) {
 });
 
 app.get("/*", function (req, res) {
-  res.status(404).send("404 - Page not found");
+  res.status(404).sendFile("404.html", { root: __dirname });
 });
 
 app.listen(process.env.PORT || 3000, function () {
