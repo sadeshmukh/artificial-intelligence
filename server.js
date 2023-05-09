@@ -22,8 +22,9 @@ app.post("/api/ai", function (req, res) {
     res.status(500).send("Token limit exceeded.");
     return;
   }
+
   try {
-    const context = req.body.context;
+    const context = req.body.context.slice(-5);
 
     const completion = openai.createChatCompletion({
       model: "gpt-3.5-turbo",

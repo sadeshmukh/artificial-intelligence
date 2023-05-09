@@ -19,6 +19,7 @@ let globalSystemMessage = "You are an affable, friendly chatbot";
 // get_api().then((response) => alert(response));
 
 async function get_ai_api(context, system) {
+  context = context.slice(-5);
   return fetch("/api/ai", {
     method: "POST",
     headers: {
