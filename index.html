@@ -97,26 +97,25 @@
                 placeholder="You are a friendly, affable chatbot."
                 aria-labelledby="personalityLabel"
               ></textarea>
-              <div class="text-end">
+              <button
+                class="btn btn-secondary mt-1"
+                onclick="openExportModal(event)"
+              >
+                Export/Import
+              </button>
+              <div class="text-end float-end">
                 <button class="btn btn-success form-submit mt-1" type="submit">
                   Update
                 </button>
               </div>
             </form>
 
-            <div class="">
-              <button
-                class="btn btn-secondary mt-4"
-                onclick="openExportModal(event)"
-              >
-                Export/Import
-              </button>
-            </div>
             <br />
+            <span id="tokenUsageSpan">0</span>
             <div class="text-center">
               <button
                 class="btn btn-danger mt-5"
-                onclick="resetGlobalContext(event)"
+                onclick="resetSettings(event)"
               >
                 Reset
               </button>
@@ -158,7 +157,7 @@
           <div class="modal-body">
             <textarea class="form-control" id="exportText" rows="10"></textarea>
             <br />
-            <button class="btn btn-danger" onclick="importContext()">
+            <button class="btn btn-danger" onclick="importSettings()">
               Import
             </button>
           </div>
