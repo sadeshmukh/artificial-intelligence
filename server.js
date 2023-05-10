@@ -11,6 +11,7 @@ const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
 const GLOBAL_TOKEN_LIMIT = 5000;
+const CONTEXT_LIMIT = 5;
 let token_usage = 0;
 
 app.get("/", function (req, res) {
@@ -24,7 +25,7 @@ app.post("/api/ai", function (req, res) {
   }
 
   try {
-    const context = req.body.context.slice(-5);
+    const context = req.body.context.slice(-CONTEXT_LIMIT);
 
     const completion = openai.createChatCompletion({
       model: "gpt-3.5-turbo",
