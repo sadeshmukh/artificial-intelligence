@@ -6,6 +6,9 @@ const settingsModal = new bootstrap.Modal(
 );
 const exportText = document.getElementById("exportText");
 const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
+const personalityInput = document.getElementById("personalityInput");
+
+const noTextHTML = "<div class='h2 m-5'>Have fun!</div>";
 
 const encryptionKey = "12345";
 
@@ -18,9 +21,6 @@ if (!globalContext) {
   globalContext = [];
 }
 renderOutput();
-
-let contextLength = 3;
-let globalSystemMessage = "You are an affable, friendly chatbot";
 
 const resetGlobalContext = (event = null) => {
   if (!event) {
@@ -42,6 +42,32 @@ const addGlobalContext = (context) => {
   renderOutput();
 };
 
+let contextLength = 3;
+const DEFAULT_SYSTEM_MESSAGE = "You are an affable, friendly chatbot.";
+let globalSystemMessage = localStorage.getItem("globalSystemMessage");
+if (!globalSystemMessage) {
+  globalSystemMessage = DEFAULT_SYSTEM_MESSAGE;
+  localStorage.setItem("globalSystemMessage", globalSystemMessage);
+}
+
+if (globalSystemMessage !== DEFAULT_SYSTEM_MESSAGE) {
+  personalityInput.value = globalSystemMessage;
+}
+
+const updateSystemMessage = (event) => {
+  event.preventDefault();
+  personalityInput.value = personalityInput.value.trim();
+  globalSystemMessage =
+    personalityInput.value.length > 0
+      ? personalityInput.value
+      : DEFAULT_SYSTEM_MESSAGE;
+
+  personalityInput.value =
+    globalSystemMessage === DEFAULT_SYSTEM_MESSAGE ? "" : globalSystemMessage;
+  localStorage.setItem("globalSystemMessage", globalSystemMessage);
+  settingsModal.hide();
+};
+
 const updateContextLength = (length) => {
   contextLength = length;
 };
@@ -57,8 +83,9 @@ const exportContext = () => {
     JSON.stringify(globalContext),
     encryptionKey
   ).toString();
-  exportText.value = encryptedContext;
-  console.log(exportText.value);
+  if (contextIsValid(globalContext)) {
+    exportText.value = encryptedContext;
+  }
 };
 
 const importContext = () => {
@@ -69,14 +96,30 @@ const importContext = () => {
       encryptionKey
     ).toString(CryptoJS.enc.Utf8);
     const parsedContext = JSON.parse(decryptedContext);
-    if (parsedContext) {
-      globalContext = parsedContext;
-      localStorage.setItem("globalContext", JSON.stringify(globalContext));
-      renderOutput();
-      exportModal.hide();
+    if (!contextIsValid(parsedContext)) {
+      alert("Invalid context");
+      throw new Error("Invalid context");
     }
+    globalContext = parsedContext;
+    localStorage.setItem("globalContext", JSON.stringify(globalContext));
+    renderOutput();
+    exportModal.hide();
   } catch (error) {
     alert("Invalid context");
+  }
+};
+
+const contextIsValid = (context) => {
+  try {
+    if (context.length === 0) {
+      return false;
+    }
+    if (context[context.length - 1].role !== "assistant") {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    return false;
   }
 };
 
@@ -132,12 +175,17 @@ const onChatSubmit = function (event) {
 
 // renders the output with alternating colors
 function renderOutput() {
+  if (globalContext.length === 0) {
+    outputDiv.innerHTML = noTextHTML;
+    return;
+  }
   outputDiv.innerHTML = "";
   globalContext.forEach((message) => {
     const messageDiv = document.createElement("div");
-    messageDiv.classList.add("message");
-    messageDiv.classList.add(message.role);
-    messageDiv.classList.add("p-3");
+    let newClasses = ["message", message.role, "py-3", "px-5"];
+    newClasses.forEach((newClass) => {
+      messageDiv.classList.add(newClass);
+    });
     if (message.role === "user") {
       messageDiv.classList.add("bg-secondary");
     }
