@@ -9,6 +9,8 @@ const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
 const personalityInput = document.getElementById("personalityInput");
 const tokenUsageSpan = document.getElementById("tokenUsageSpan");
 const contextSlider = document.getElementById("contextSlider");
+const loadingSpinner = document.getElementById("loadingSpinner");
+const goText = document.getElementById("goText");
 
 const noTextHTML = "<div class='h2 m-5'>Have fun!</div>";
 
@@ -62,7 +64,21 @@ const resetSettings = (event = null) => {
   settingsModal.hide();
 };
 
+const resetContext = (event) => {
+  event.preventDefault();
+  globalContext = [];
+  localStorage.setItem("globalContext", JSON.stringify(globalContext));
+  tokenusage = 0;
+  localStorage.setItem("tokenusage", tokenusage);
+  renderOutput();
+};
+
 const addGlobalContext = (context) => {
+  context.content = context.content.trim();
+  if (context.length === 0) {
+    return;
+  }
+  context.content = context.content.replace(/(?:\r\n|\r|\n)/g, "<br>");
   globalContext.push(context);
   if (globalContext[globalContext.length - 1].role === "assistant") {
     localStorage.setItem("globalContext", JSON.stringify(globalContext));
@@ -215,6 +231,8 @@ const get_ai_api = async function (context, system) {
 
 const onChatSubmit = function (event) {
   event.preventDefault();
+  loadingSpinner.hidden = false;
+  goText.hidden = true;
   chatSubmitButton.disabled = true;
   chatInput.value = chatInput.value.trim();
   if (chatInput.value.length === 0) {
@@ -224,10 +242,16 @@ const onChatSubmit = function (event) {
   addGlobalContext({ role: "user", content: chatInput.value });
   chatInput.value = "";
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
-    console.log(response);
-    addGlobalContext({ role: "assistant", content: response });
+    console.log(response.replace(/(?:\r\n|\r|\n)/g, "<br>"));
+    addGlobalContext({
+      role: "assistant",
+      content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
+    });
+
     chatInput.value = "";
     chatSubmitButton.disabled = false;
+    loadingSpinner.hidden = true;
+    goText.hidden = false;
     chatInput.focus();
   });
 };
