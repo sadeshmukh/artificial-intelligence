@@ -25,7 +25,7 @@ app.post("/api/ai", function (req, res) {
   }
 
   try {
-    const context = req.body.context.slice(-CONTEXT_LIMIT);
+    const context = req.body.context.slice(-(CONTEXT_LIMIT + 1) * 2);
 
     const completion = openai.createChatCompletion({
       model: "gpt-3.5-turbo",

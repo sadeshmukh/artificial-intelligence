@@ -29,10 +29,9 @@ if (!tokenusage) {
   tokenusage = 0;
   localStorage.setItem("tokenusage", tokenusage);
 }
-tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${Math.round(
-  tokenusage / 5000,
-  2
-)} cents)`;
+tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+  Math.round(tokenusage / 50) / 100
+} cents)`;
 
 const resetSettings = (event = null) => {
   if (event) {
@@ -203,11 +202,12 @@ const get_ai_api = async function (context, system) {
   })
     .then((response) => response.json())
     .then((response) => {
-      tokenusage += response.token_usage;
-      tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${Math.round(
-        tokenusage / 5000,
-        2
-      )} cents)`;
+      console.log(tokenusage);
+      tokenusage += response.tokens ? response.tokens : 0;
+      console.log(tokenusage);
+      tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+        Math.round(tokenusage / 50) / 100
+      } cents)`;
       localStorage.setItem("tokenusage", tokenusage);
       return response.output;
     });
@@ -217,6 +217,10 @@ const onChatSubmit = function (event) {
   event.preventDefault();
   chatSubmitButton.disabled = true;
   chatInput.value = chatInput.value.trim();
+  if (chatInput.value.length === 0) {
+    chatSubmitButton.disabled = false;
+    return;
+  }
   addGlobalContext({ role: "user", content: chatInput.value });
   chatInput.value = "";
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
