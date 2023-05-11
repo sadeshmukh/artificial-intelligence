@@ -231,14 +231,15 @@ const get_ai_api = async function (context, system) {
 
 const onChatSubmit = function (event) {
   event.preventDefault();
-  loadingSpinner.hidden = false;
-  goText.hidden = true;
-  chatSubmitButton.disabled = true;
   chatInput.value = chatInput.value.trim();
   if (chatInput.value.length === 0) {
     chatSubmitButton.disabled = false;
     return;
   }
+  loadingSpinner.hidden = false;
+  goText.hidden = true;
+  chatSubmitButton.disabled = true;
+
   addGlobalContext({ role: "user", content: chatInput.value });
   chatInput.value = "";
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
