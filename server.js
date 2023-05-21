@@ -1,12 +1,16 @@
+require("dotenv").config()
 express = require("express");
 bodyParser = require("body-parser");
+
 app = express();
 app.use(bodyParser.json());
 app.use(express.static(__dirname + "/public"));
 
 const { Configuration, OpenAIApi } = require("openai");
 
-const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
+const {OPENAI_API_KEY, PORT} = process.env
+
+const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
 
 const openai = new OpenAIApi(configuration);
 
@@ -45,6 +49,8 @@ app.post("/api/ai", function (req, res) {
   }
 });
 
+/*
+// No disrespect, but this is stupid.
 app.get("/api/upper", function (req, res) {
   console.log(req.body);
   try {
@@ -62,13 +68,14 @@ app.post("/api/upper", function (req, res) {
     res.send({ response: "Error" });
   }
 });
+*/
 
 app.get("/*", function (req, res) {
   res.status(404).sendFile("404.html", { root: __dirname });
 });
 
-app.listen(process.env.PORT || 3000, function () {
+app.listen(PORT || 3000, function () {
   console.log(
-    `Server running at http://localhost:${process.env.PORT || 3000}/`
+    `Server running at http://localhost:${PORT || 3000}/`
   );
 });
