@@ -206,7 +206,9 @@ const get_ai_api = async function (context, system) {
   } else {
     context = context.slice(-contextLength * 2);
   }
-  return fetch("/api/ai", {
+  shortpoll_id = null;
+  let output = null;
+  fetch("/api/ai", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -216,17 +218,83 @@ const get_ai_api = async function (context, system) {
       context: [{ role: "system", content: system }].concat(context),
     }),
   })
-    .then((response) => response.json())
     .then((response) => {
-      console.log(tokenusage);
-      tokenusage += response.tokens ? response.tokens : 0;
-      console.log(tokenusage);
-      tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
-        Math.round(tokenusage / 50) / 100
-      } cents)`;
-      localStorage.setItem("tokenusage", tokenusage);
-      return response.output;
+      return response.json();
+    })
+    .then((response) => {
+      shortpoll_id = response.shortpoll;
+      let shortpollInterval = setInterval(() => {
+        fetch("/api/shortpoll", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            shortpoll_id: shortpoll_id,
+          }),
+        })
+          .then((response) => {
+            try {
+              return response.json();
+            } catch (error) {
+              console.log("polling...");
+              return;
+            }
+          })
+
+          .then((response) => {
+            if (response.completion !== "full") {
+              console.log("polling...");
+              return;
+            } else {
+              clearInterval(shortpollInterval);
+              return response;
+            }
+          })
+          .then((response) => {
+            if (!response) {
+              return;
+            }
+            console.log(tokenusage);
+            tokenusage += response.tokens ? response.tokens : 0;
+            console.log(tokenusage);
+            tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+              Math.round(tokenusage / 50) / 100
+            } cents)`;
+            localStorage.setItem("tokenusage", tokenusage);
+
+            output = response.output;
+          });
+      }, 5000);
     });
+  while (!output) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  return output;
+
+  // return fetch("/api/ai", {
+  //   method: "POST",
+  //   headers: {
+  //     Accept: "application/json",
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify({
+  //     context: [{ role: "system", content: system }].concat(context),
+  //   }),
+  // })
+  //   .then((response) => response.json())
+  //   .then((response) => {
+  //     console.log(tokenusage);
+  //     tokenusage += response.tokens ? response.tokens : 0;
+  //     console.log(tokenusage);
+  //     tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+  //       Math.round(tokenusage / 50) / 100
+  //     } cents)`;
+  //     localStorage.setItem("tokenusage", tokenusage);
+  //     return response.output;
+  //   });
 };
 
 const onChatSubmit = function (event) {
