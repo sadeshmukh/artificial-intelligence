@@ -1,3 +1,5 @@
+const { response } = require("express");
+
 const chatSubmitButton = $("#chatSubmit");
 const chatInput = $("#chatInput");
 const outputDiv = $("#outputDiv");
@@ -223,8 +225,9 @@ async function get_ai_api(context, system) {
       context: [{ role: "system", content: system }].concat(context),
     }),
   })
-    .then((response) => response.json())
-    .then((response) => {
+    .then(response => response.json())
+    .then(response => {
+      if (response.error) {throw response.error}
       console.log(tokenusage);
       tokenusage += response.tokens ? response.tokens : 0;
       console.log(tokenusage);
@@ -233,7 +236,8 @@ async function get_ai_api(context, system) {
       } cents)`;
       localStorage.setItem("tokenusage", tokenusage);
       return response.output;
-    });
+    })
+    .catch()
 };
 
 function onChatSubmit (event) {

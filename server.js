@@ -1,14 +1,25 @@
 require("dotenv").config()
-express = require("express");
-bodyParser = require("body-parser");
+const express = require("express");
+const bodyParser = require("body-parser");
+const session = require("express-session")
+const {ensureLoggedIn, ensureLoggedOut, usernameToLowerCase, init} = require("./utils")
+
+const {OPENAI_API_KEY, PORT, USERNAME, PASSWORD, SESSION_SECRET} = process.env
 
 app = express();
 app.use(bodyParser.json());
+app.use(express.urlencoded({extended: true, limit: "1kb"}))
 app.use(express.static(__dirname + "/public"));
+app.use(session({
+  secret: SESSION_SECRET,
+  name: "not_admin",
+  resave: false,
+  saveUninitialized: false,
+}))
+app.use(init)
+app.use(usernameToLowerCase)
 
 const { Configuration, OpenAIApi } = require("openai");
-
-const {OPENAI_API_KEY, PORT} = process.env
 
 const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
 
@@ -22,7 +33,13 @@ app.get("/", function (req, res) {
   res.sendFile(`index.html`, { root: __dirname });
 });
 
-app.post("/api/ai", function (req, res) {
+app.post("/api/ai", (req, res, next) => {
+  if(req.isAuthenticated()) {next()} else {
+    res.send({
+      error: "No access"
+    })
+  }
+}, function (req, res) {
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {
     res.status(500).send("Token limit exceeded.");
     return;
@@ -48,6 +65,22 @@ app.post("/api/ai", function (req, res) {
     res.status(500).send("There was an error.");
   }
 });
+
+app.route("/admin.txt")
+  .get((req, res) => {
+    res.sendFile("admin.html", { root: __dirname })
+  })
+  .post((req, res) => {
+    const {username, password} = req.body
+    // I'm going to use basic security. If you think of a good reason to not, I'll do something more complicated(Argon2id or others). I can make everything more secure
+    if (username == USERNAME && password == PASSWORD) {
+      req.session.loggedIn = true
+      // IDK how to send a status message on whtether it was successfull or not. I used ejs along with session before, but I can't with just html.
+      res.redirect("/")
+    } else {
+      res.redirect("/")
+    }
+  })
 
 /*
 // No disrespect, but this is stupid.

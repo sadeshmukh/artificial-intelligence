@@ -6,6 +6,8 @@ const settingsModal = new bootstrap.Modal(
 );
 const exportText = document.getElementById("exportText");
 const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
+const errorModal = new bootstrap.Modal(document.getElementById("errorModal"));
+const errorText = document.getElementById("errorText")
 const personalityInput = document.getElementById("personalityInput");
 const tokenUsageSpan = document.getElementById("tokenUsageSpan");
 const contextSlider = document.getElementById("contextSlider");
@@ -228,6 +230,7 @@ async function get_ai_api(context, system) {
   })
     .then(response => response.json())
     .then(response => {
+      if (response.error) {throw response.error}
       console.log(tokenusage);
       tokenusage += response.tokens ? response.tokens : 0;
       console.log(tokenusage);
@@ -236,7 +239,17 @@ async function get_ai_api(context, system) {
       } cents)`;
       localStorage.setItem("tokenusage", tokenusage);
       return response.output;
-    });
+    })
+    .catch(e=>{
+      errorText.innerText = e
+      errorModal.show()
+      chatSubmitButton.disabled = false
+      loadingSpinner.hidden = true
+      goText.hidden = false
+      chatInput.focus();
+      globalContext.pop()
+      renderOutput()
+    })
 };
 
 function onChatSubmit(event) {
@@ -259,9 +272,9 @@ function onChatSubmit(event) {
       content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
     });
 
-    chatSubmitButton.button("enabled")
-    loadingSpinner.hide();
-    goText.show()
+    chatSubmitButton.disabled = false
+    loadingSpinner.hidden = true
+    goText.hidden = false
     chatInput.focus();
   });
 };
