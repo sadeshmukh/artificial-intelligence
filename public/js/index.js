@@ -1,5 +1,3 @@
-const { response } = require("express");
-
 const chatSubmitButton = $("#chatSubmit");
 const chatInput = $("#chatInput");
 const outputDiv = $("#outputDiv");

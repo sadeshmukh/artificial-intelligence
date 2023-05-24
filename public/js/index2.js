@@ -296,6 +296,6 @@ function renderOutput() {
       messageDiv.classList.add("bg-secondary");
     }
     messageDiv.innerHTML = message.content;
-    outputDiv.append(messageDiv);
+    outputDiv.appendChild(messageDiv);
   });
 }
