@@ -34,7 +34,7 @@ function usernameToLowerCase(req, res, next){
     next();
 }
 
-async function getCompletion(history) {
+async function getCompletion(history, openai) {
     let completion = null;
     let completionAttempts = 0;
     while (!completion) {

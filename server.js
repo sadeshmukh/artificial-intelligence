@@ -34,14 +34,8 @@ app.get("/", function (req, res) {
   res.sendFile(`index.html`, { root: __dirname });
 });
 
-app.post("/api/ai", (req, res, next) => {
-  if(req.isAuthenticated()) {next()} else {
-    res.send({
-      error: "No access",
-      completion: "full"
-    })
-  }
-}, function (req, res) {
+// You can make a shortpoll request, but never retrieve data.
+app.post("/api/ai", function (req, res) {
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {
     res.status(500).send("Token limit exceeded.");
     return;
@@ -50,28 +44,42 @@ app.post("/api/ai", (req, res, next) => {
   try {
     const context = req.body.context.slice(-(CONTEXT_LIMIT + 1) * 2);
 
-    const completion = getCompletion(context)
+    // I moved the code around, to make everything work, while not wasting credits.
     shortpoll_id = Math.random().toString(36).substring(7)
     while (shortpolls[shortpoll_id]) {
       shortpoll_id = Math.random().toString(36).substring(7)
     }
-    shortpolls[shortpoll_id] = {completion:"incomplete"}
-    completion.then((response) => {
-      shortpolls[shortpoll_id] = {
-        output: response.data.choices[0].message.content,
-        tokens: response.data.usage.total_tokens,
-        completion: "full"
-      };
-      token_usage += response.data.usage.total_tokens;
-      console.log(`Token usage: ${token_usage}`);
-    });
-    res.status(202).send( {shortpoll: shortpoll_id} )
+
+    shortpolls[shortpoll_id] = { completion:"incomplete" }
+    // This is one costs the credits. So it requires authentication. 
+    // I set the error the be visible during shortpolling. It'll take a second, but it's slow if you do anything else.
+    if (req.isAuthenticated()) {
+      const completion = getCompletion(context, openai)
+      completion.then((response) => {
+        shortpolls[shortpoll_id] = {
+          output: response.data.choices[0].message.content,
+          tokens: response.data.usage.total_tokens,
+          completion: "full"
+        };
+        token_usage += response.data.usage.total_tokens;
+        console.log(`Token usage: ${token_usage}`);
+      });
+    }
+    res.status(202).send({ shortpoll: shortpoll_id } )
   } catch {
     res.status(500).send("There was an error.");
   }
 });
 
-app.post("/api/shortpoll", function (req, res) {
+app.post("/api/shortpoll", (req, res, next) => {
+  if(req.isAuthenticated()) {next()} else {
+    delete shortpolls[req.body.shortpoll_id];
+    res.send({
+      error: "No access",
+      completion: "full"
+    })
+  }
+}, function (req, res) {
   console.log(shortpolls);
   console.log(req.body);
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {

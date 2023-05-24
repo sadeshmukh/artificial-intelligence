@@ -1,21 +1,25 @@
-const chatSubmitButton = $("#chatSubmit");
-const chatInput = $("#chatInput");
-const outputDiv = $("#outputDiv");
-const settingsModal = new bootstrap.Modal($("#settingsModal"));
-const exportText = $("#exportText");
-const exportModal = new bootstrap.Modal($("#exportModal"));
-const personalityInput = $("#personalityInput");
-const tokenUsageSpan = $("#tokenUsageSpan");
-const contextSlider = $("#contextSlider");
-const loadingSpinner = $("#loadingSpinner");
-const goText = $("#goText");
+const chatSubmitButton = document.getElementById("chatSubmit");
+const chatInput = document.getElementById("chatInput");
+const outputDiv = document.getElementById("outputDiv");
+const settingsModal = new bootstrap.Modal(
+  document.getElementById("settingsModal")
+);
+const exportText = document.getElementById("exportText");
+const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
+const errorModal = new bootstrap.Modal(document.getElementById("errorModal"));
+const errorText = document.getElementById("errorText")
+const personalityInput = document.getElementById("personalityInput");
+const tokenUsageSpan = document.getElementById("tokenUsageSpan");
+const contextSlider = document.getElementById("contextSlider");
+const loadingSpinner = document.getElementById("loadingSpinner");
+const goText = document.getElementById("goText");
 
 const noTextHTML = "<div class='h2 m-5'>Have fun!</div>";
 
 const encryptionKey = "12345";
 
-const userInput = $("#userInput");
-const output = $("#output");
+const userInput = document.getElementById("userInput");
+const output = document.getElementById("output");
 
 const DEFAULT_SYSTEM_MESSAGE = "You are an affable, friendly chatbot.";
 
@@ -56,9 +60,9 @@ function resetSettings(event = null) {
     contextLength = 3;
   }
   localStorage.setItem("contextLength", contextLength);
-  contextSlider.val(contextLength)
+  contextSlider.value = contextLength;
 
-  personalityInput.val("")
+  personalityInput.value = ""
   tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${Math.round(
     tokenusage / 5000,
     2
@@ -68,7 +72,7 @@ function resetSettings(event = null) {
   settingsModal.hide();
 };
 
-const resetContext = (event) => {
+const resetContext = event => {
   event.preventDefault();
   globalContext = [];
   localStorage.setItem("globalContext", JSON.stringify(globalContext));
@@ -77,7 +81,7 @@ const resetContext = (event) => {
   renderOutput();
 };
 
-const addGlobalContext = (context) => {
+const addGlobalContext = context => {
   context.content = context.content.trim();
   if (context.length === 0) {
     return;
@@ -95,7 +99,7 @@ if (!contextLength && contextLength !== 0) {
   contextLength = 3;
   localStorage.setItem("contextLength", contextLength);
 }
-contextSlider.val(contextLength)
+contextSlider.value = contextLength
 
 let globalSystemMessage = localStorage.getItem("globalSystemMessage");
 if (!globalSystemMessage) {
@@ -104,19 +108,18 @@ if (!globalSystemMessage) {
 }
 
 if (globalSystemMessage !== DEFAULT_SYSTEM_MESSAGE) {
-  personalityInput.val(globalSystemMessage)
+  personalityInput.value = globalSystemMessage
 }
 
 function updateSystemMessage(event) {
   event.preventDefault();
-  personalityInput.val((_, value)=>{return value.trim()})
+  personalityInput.value = personalityInput.value.trim();
   globalSystemMessage =
-    personalityInput.val().length > 0
-      ? personalityInput.val()
+    personalityInput.value.length > 0
+      ? personalityInput.value
       : DEFAULT_SYSTEM_MESSAGE;
 
-  newValue = globalSystemMessage === DEFAULT_SYSTEM_MESSAGE ? "" : globalSystemMessage
-  personalityInput.val(newValue)
+  personalityInput.value = globalSystemMessage === DEFAULT_SYSTEM_MESSAGE ? "" : globalSystemMessage
   localStorage.setItem("globalSystemMessage", globalSystemMessage);
   settingsModal.hide();
 };
@@ -133,6 +136,9 @@ function openExportModal(event) {
 };
 
 function exportSettings() {
+    // TODO: Use base64
+    // If you really don't want someone to find out what it says, don't keep the key in the public folder
+    // NOTE: Might be faster if you do aes when you know the sttings are valid
   const encryptedContext = CryptoJS.AES.encrypt(
     JSON.stringify({
       context: globalContext,
@@ -150,13 +156,13 @@ function exportSettings() {
       contextLength: contextLength,
     })
   ) {
-    exportText.val(encryptedContext)
+    exportText.value = encryptedContext
     console.log(encryptedContext);
   }
 };
 
 function importSettings() {
-  const encryptedContext = exportText.val();
+  const encryptedContext = exportText.value;
   try {
     const decryptedContext = CryptoJS.AES.decrypt(
       encryptedContext,
@@ -164,7 +170,6 @@ function importSettings() {
     ).toString(CryptoJS.enc.Utf8);
     const parsedContext = JSON.parse(decryptedContext);
     if (!settingsAreValid(parsedContext)) {
-      alert("Invalid context");
       throw new Error("Invalid context");
     }
     globalContext = parsedContext.context;
@@ -175,9 +180,9 @@ function importSettings() {
     localStorage.setItem("tokenusage", tokenusage);
     contextLength = parsedContext.contextLength;
     localStorage.setItem("contextLength", contextLength);
-    contextSlider.val(contextLength)
-    personalityInput.val(
-      globalSystemMessage === DEFAULT_SYSTEM_MESSAGE ? "" : globalSystemMessage)
+    contextSlider.value = contextLength
+    personalityInput.value = 
+      globalSystemMessage === DEFAULT_SYSTEM_MESSAGE ? "" : globalSystemMessage
     renderOutput();
     exportModal.hide();
   } catch (error) {
@@ -185,7 +190,7 @@ function importSettings() {
   }
 };
 
-// TODO: Rename function
+// TODO: Rename function(has nothing to do with settings)
 function settingsAreValid(settings) {
   try {
     // Check if the assistant spoke last
@@ -213,7 +218,9 @@ async function get_ai_api(context, system) {
   } else {
     context = context.slice(-contextLength * 2);
   }
-  return fetch("/api/ai", {
+  shortpoll_id = null
+  let output = null;
+  fetch("/api/ai", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -225,23 +232,77 @@ async function get_ai_api(context, system) {
   })
     .then(response => response.json())
     .then(response => {
-      if (response.error) {throw response.error}
-      console.log(tokenusage);
-      tokenusage += response.tokens ? response.tokens : 0;
-      console.log(tokenusage);
-      tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
-        Math.round(tokenusage / 50) / 100
-      } cents)`;
-      localStorage.setItem("tokenusage", tokenusage);
-      return response.output;
-    })
-    .catch()
-};
+      shortpoll_id = response.shortpoll
+      // Fetch results using id
+      // Check if it is in the form of a json response
+      // Then check if the result is full
+      // Redo if necessary - otherwise return the result
+      let shortpollInterval = setInterval(() => {
+        pollingError = false
+        fetch("/api/shortpoll", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            shortpoll_id: shortpoll_id,
+          }),
+        })
+        .then(response => {
+          return response.json();
+          // I changed the server-side to always return json unless something actually happened
+        })
+        .then(response => {
+          if (response.completion !== "full") {
+            console.log("polling...");
+            throw "P1";
+            return;
+          } else {
+            clearInterval(shortpollInterval);
+            return response;
+          }
+        })
+        .then(response => {
+          if (response.error) {throw response.error}
+          console.log(tokenusage);
+          tokenusage += response.tokens ? response.tokens : 0;
+          console.log(tokenusage);
+          tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+            Math.round(tokenusage / 50) / 100
+          } cents)`;
+          localStorage.setItem("tokenusage", tokenusage);
+          output = response.output;
+        })
+        .catch(e=>{
+          if (e=="P1") {
+            return;
+          }
+          console.log(e)
+          errorText.innerText = e
+          errorModal.show()
+          chatSubmitButton.disabled = false
+          loadingSpinner.hidden = true
+          goText.hidden = false
+          chatInput.focus();
+          globalContext.pop()
+          renderOutput()
+        })
+      }, 5000)
+    });
 
-function onChatSubmit (event) {
+    // Wait 1 second until the shortpolling process catches up and gives your data.
+    while (!output) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  
+    return output;
+}
+
+function onChatSubmit(event) {
   event.preventDefault();
-  chatInput.val((_, value) => {return value.trim()})
-  if (chatInput.val().length === 0) {
+  chatInput.innerText = chatInput.innerText.trim();
+  if (chatInput.innerText.length === 0) {
     chatSubmitButton.disabled = false;
     return;
   }
@@ -249,8 +310,8 @@ function onChatSubmit (event) {
   goText.hidden = true;
   chatSubmitButton.disabled = true;
 
-  addGlobalContext({ role: "user", content: chatInput.val() });
-  chatInput.val("")
+  addGlobalContext({ role: "user", content: chatInput.innerText });
+  chatInput.innerText = ""
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
     console.log(response.replace(/(?:\r\n|\r|\n)/g, "<br>"));
     addGlobalContext({
@@ -258,10 +319,9 @@ function onChatSubmit (event) {
       content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
     });
 
-    chatInput.val("")
-    chatSubmitButton.button("enabled")
-    loadingSpinner.hide();
-    goText.show()
+    chatSubmitButton.disabled = false
+    loadingSpinner.hidden = true
+    goText.hidden = false
     chatInput.focus();
   });
 };
@@ -283,6 +343,6 @@ function renderOutput() {
       messageDiv.classList.add("bg-secondary");
     }
     messageDiv.innerHTML = message.content;
-    outputDiv.append(messageDiv);
+    outputDiv.appendChild(messageDiv);
   });
 }
