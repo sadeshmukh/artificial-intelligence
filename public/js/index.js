@@ -307,6 +307,7 @@ const onChatSubmit = function (event) {
   loadingSpinner.hidden = false;
   goText.hidden = true;
   chatSubmitButton.disabled = true;
+  chatInput.style.height = "1rem";
 
   addGlobalContext({ role: "user", content: chatInput.value });
   chatInput.value = "";
@@ -317,7 +318,6 @@ const onChatSubmit = function (event) {
       content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
     });
 
-    chatInput.value = "";
     chatSubmitButton.disabled = false;
     loadingSpinner.hidden = true;
     goText.hidden = false;
