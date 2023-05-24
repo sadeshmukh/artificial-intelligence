@@ -299,18 +299,18 @@ const get_ai_api = async function (context, system) {
 
 const onChatSubmit = function (event) {
   event.preventDefault();
-  chatInput.value = chatInput.value.trim();
-  if (chatInput.value.length === 0) {
+  chatInput.innerText = chatInput.innerText.trim();
+  if (chatInput.innerText.length === 0) {
     chatSubmitButton.disabled = false;
     return;
   }
   loadingSpinner.hidden = false;
   goText.hidden = true;
   chatSubmitButton.disabled = true;
-  chatInput.style.height = "1rem";
+  // chatInput.style.height = "2rem";
 
-  addGlobalContext({ role: "user", content: chatInput.value });
-  chatInput.value = "";
+  addGlobalContext({ role: "user", content: chatInput.innerText });
+  chatInput.innerText = "";
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
     console.log(response.replace(/(?:\r\n|\r|\n)/g, "<br>"));
     addGlobalContext({

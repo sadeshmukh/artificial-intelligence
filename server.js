@@ -17,10 +17,26 @@ let token_usage = 0;
 const shortpolls = {};
 
 async function getCompletion(history) {
-  return await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    messages: history,
-  });
+  let completion = null;
+  let completionAttempts = 0;
+  while (!completion) {
+    completionAttempts++;
+    if (completionAttempts > 3) {
+      throw "Completion failed";
+    }
+    completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: history,
+    });
+    if (
+      !["length", "stop"].includes(completion.data.choices[0].finish_reason)
+    ) {
+      console.log("Restarting completion", completion.data);
+      completion = null;
+    }
+  }
+
+  return completion;
 }
 
 app.get("/", function (req, res) {
