@@ -1,3 +1,5 @@
+const { response } = require("express");
+
 const chatSubmitButton = document.getElementById("chatSubmit");
 const chatInput = document.getElementById("chatInput");
 const outputDiv = document.getElementById("outputDiv");
@@ -218,7 +220,9 @@ async function get_ai_api(context, system) {
   } else {
     context = context.slice(-contextLength * 2);
   }
-  return fetch("/api/ai", {
+  shortpoll_id = null
+  let output = null;
+  fetch("/api/ai", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -229,6 +233,38 @@ async function get_ai_api(context, system) {
     }),
   })
     .then(response => response.json())
+    .then(response => {
+      shortpoll_id = response.shortpoll
+      // Fetch results using id
+      // Check if it is in the form of a json response
+      // Then check if the result is full
+      // Redo if necessary - otherwise return the result
+      let shortpollInterval = setInterval(() => {
+        pollingError = false
+        fetch("/api/shortpoll", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            shortpoll_id: shortpoll_id,
+          }),
+      })
+        .then(response => {
+          return response.json();
+          // I changed the server-side to always return json unless something actually happened
+        })
+        .then(response => {
+          if (response.completion !== "full") {
+            console.log("polling...");
+            return;
+          } else {
+            clearInterval(shortpollInterval);
+            return response;
+          }
+        })
+    }, 5000)
     .then(response => {
       if (response.error) {throw response.error}
       console.log(tokenusage);
@@ -241,6 +277,9 @@ async function get_ai_api(context, system) {
       return response.output;
     })
     .catch(e=>{
+      if (pollingError) {
+        return;
+      }
       errorText.innerText = e
       errorModal.show()
       chatSubmitButton.disabled = false
@@ -250,12 +289,12 @@ async function get_ai_api(context, system) {
       globalContext.pop()
       renderOutput()
     })
-};
+});
 
 function onChatSubmit(event) {
   event.preventDefault();
-  chatInput.value = chatInput.value.trim();
-  if (chatInput.value.length === 0) {
+  chatInput.innerText = chatInput.innerText.trim();
+  if (chatInput.innerText.length === 0) {
     chatSubmitButton.disabled = false;
     return;
   }
@@ -263,8 +302,8 @@ function onChatSubmit(event) {
   goText.hidden = true;
   chatSubmitButton.disabled = true;
 
-  addGlobalContext({ role: "user", content: chatInput.value });
-  chatInput.value = ""
+  addGlobalContext({ role: "user", content: chatInput.innerText });
+  chatInput.innerText = ""
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
     console.log(response.replace(/(?:\r\n|\r|\n)/g, "<br>"));
     addGlobalContext({

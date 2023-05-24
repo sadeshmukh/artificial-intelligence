@@ -34,8 +34,32 @@ function usernameToLowerCase(req, res, next){
     next();
 }
 
+async function getCompletion(history) {
+    let completion = null;
+    let completionAttempts = 0;
+    while (!completion) {
+      completionAttempts++;
+      if (completionAttempts > 3) {
+        throw "Completion failed";
+      }
+      completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: history,
+      });
+      if (
+        !["length", "stop"].includes(completion.data.choices[0].finish_reason)
+      ) {
+        console.log("Restarting completion", completion.data);
+        completion = null;
+      }
+    }
+  
+    return completion;
+  }
+
 module.exports = exports = init
 exports.init = init
 exports.ensureLoggedIn = ensureLoggedIn
 exports.ensureLoggedOut = ensureLoggedOut
 exports.usernameToLowerCase = usernameToLowerCase
+exports.getCompletion = getCompletion

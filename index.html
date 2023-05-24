@@ -201,12 +201,15 @@
       <div class="py-3 bg-secondary">
         <form class="row mx-2" onsubmit="onChatSubmit(event)">
           <div class="col-lg-10 col-md-12">
-            <input
+            <div
               type="text"
-              class="form-control"
               id="chatInput"
               placeholder="Say something astonishing..."
-            />
+              class="form-control"
+              contenteditable
+            >
+              Say something astonishing...
+            </div>
           </div>
 
           <button
