@@ -250,7 +250,7 @@ async function get_ai_api(context, system) {
           body: JSON.stringify({
             shortpoll_id: shortpoll_id,
           }),
-      })
+        })
         .then(response => {
           return response.json();
           // I changed the server-side to always return json unless something actually happened
@@ -264,32 +264,33 @@ async function get_ai_api(context, system) {
             return response;
           }
         })
-    }, 5000)
-    .then(response => {
-      if (response.error) {throw response.error}
-      console.log(tokenusage);
-      tokenusage += response.tokens ? response.tokens : 0;
-      console.log(tokenusage);
-      tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
-        Math.round(tokenusage / 50) / 100
-      } cents)`;
-      localStorage.setItem("tokenusage", tokenusage);
-      return response.output;
-    })
-    .catch(e=>{
-      if (pollingError) {
-        return;
-      }
-      errorText.innerText = e
-      errorModal.show()
-      chatSubmitButton.disabled = false
-      loadingSpinner.hidden = true
-      goText.hidden = false
-      chatInput.focus();
-      globalContext.pop()
-      renderOutput()
-    })
-});
+        .then(response => {
+          if (response.error) {throw response.error}
+          console.log(tokenusage);
+          tokenusage += response.tokens ? response.tokens : 0;
+          console.log(tokenusage);
+          tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${
+            Math.round(tokenusage / 50) / 100
+          } cents)`;
+          localStorage.setItem("tokenusage", tokenusage);
+          return response.output;
+        })
+        .catch(e=>{
+          if (pollingError) {
+            return;
+          }
+          errorText.innerText = e
+          errorModal.show()
+          chatSubmitButton.disabled = false
+          loadingSpinner.hidden = true
+          goText.hidden = false
+          chatInput.focus();
+          globalContext.pop()
+          renderOutput()
+        })
+      }, 5000)
+    });
+}
 
 function onChatSubmit(event) {
   event.preventDefault();
