@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="h-100">
+<html class="h-100">
   <head>
     <meta charset="UTF-8" />
-    <title>GPT Talkeroo</title>
+    <title>DALL-E Images</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -20,7 +20,7 @@
   <body class="h-100 d-flex flex-column bg-secondary bg-opacity-50">
     <nav class="navbar navbar-dark bg-dark navbar-expand-lg">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/"><h1>GPT Talkeroo</h1></a>
+        <a class="navbar-brand" href="/"><h1>DALL-E Images</h1></a>
         <button
           class="navbar-toggler"
           type="button"
@@ -41,6 +41,7 @@
               <a class="nav-link" href="/image">Image</a>
             </li>
           </ul>
+
           <div class="navbar-nav navbar-ul text-end text-light">
             <button
               class="btn btn-secondary btn-lg"
@@ -53,7 +54,7 @@
         </div>
       </div>
     </nav>
-    <!-- Settings Modal -->
+    <!--Settings-->
     <div
       class="modal fade"
       id="settingsModal"
@@ -73,67 +74,7 @@
             ></button>
           </div>
           <!-- Settings -->
-          <div class="modal-body">
-            <label for="#contextSlider" class="form-label">Context</label>
-            <br />
-            <input
-              type="range"
-              min="0"
-              max="5"
-              value="3"
-              aria-labelledby="contextLabel"
-              id="contextSlider"
-              class="form-input w-100 mt-1"
-              oninput="updateContextLength(parseInt(event.target.value))"
-            />
-            <label for="contextSlider" class="fs-6">0</label>
-            <div class="ms-auto text-end d-inline-block float-end">
-              <label class="fs-6">5</label>
-            </div>
-
-            <br />
-            <span class="form-text text-muted">How far the bot remembers</span>
-            <br />
-            <form class="form" onsubmit="updateSystemMessage(event)">
-              <label for="personalityInput" class="form-label mt-3"
-                >Personality</label
-              >
-              <textarea
-                class="form-control"
-                id="personalityInput"
-                rows="3"
-                placeholder="You are a friendly, affable chatbot."
-                aria-labelledby="personalityLabel"
-              ></textarea>
-              <button
-                class="btn btn-secondary mt-1"
-                onclick="openExportModal(event)"
-              >
-                Export/Import
-              </button>
-              <div class="text-end float-end">
-                <button class="btn btn-success form-submit mt-1" type="submit">
-                  Update
-                </button>
-              </div>
-            </form>
-
-            <br />
-            <span id="tokenUsageSpan">0</span>
-            <div class="text-center">
-              <button
-                class="btn btn-danger mt-5 me-3"
-                onclick="resetContext(event)"
-              >
-                Reset Context</button
-              ><button
-                class="btn btn-danger mt-5"
-                onclick="resetSettings(event)"
-              >
-                Reset All
-              </button>
-            </div>
-          </div>
+          <div class="modal body"></div>
           <div class="modal-footer">
             <button
               type="button"
@@ -146,49 +87,10 @@
         </div>
       </div>
     </div>
-    <!-- Export Modal-->
-    <div
-      class="modal fade"
-      id="exportModal"
-      tabindex="-1"
-      aria-labelledby="exportModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="exportModalLabel">
-              Export/Import
-            </h1>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <textarea class="form-control" id="exportText" rows="10"></textarea>
-            <br />
-            <button class="btn btn-danger" onclick="importSettings()">
-              Import
-            </button>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="" id="outputDiv"></div>
-    <!-- sticky div -->
+    <div class="" id="outputDiv"><h1>welcome to mickey's clubhouse</h1></div>
+    <!--Sticky Div-->
     <div class="mt-auto">
+      <!--Chat Input-->
       <div class="py-3 bg-secondary">
         <form class="row mx-2" onsubmit="onChatSubmit(event)">
           <div class="col-lg-10 col-md-12">
@@ -202,11 +104,11 @@
               Say something astonishing...
             </div>
             <!-- <input
-              type="text"
-              class="form-control"
-              id="chatInput"
-              placeholder="Say something astonishing..."
-            /> -->
+            type="text"
+            class="form-control"
+            id="chatInput"
+            placeholder="Say something astonishing..."
+          /> -->
           </div>
 
           <button
@@ -239,7 +141,6 @@
         </div>
       </footer>
     </div>
-
-    <script src="js/index.js"></script>
+    <script src="js/image.js"></script>
   </body>
 </html>

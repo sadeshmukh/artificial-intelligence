@@ -4,6 +4,7 @@ app = express();
 app.use(bodyParser.json());
 app.use(express.static(__dirname + "/public"));
 
+const { response } = require("express");
 const { Configuration, OpenAIApi } = require("openai");
 
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
@@ -43,7 +44,38 @@ app.get("/", function (req, res) {
   res.sendFile(`index.html`, { root: __dirname });
 });
 
-app.post("/api/ai", function (req, res) {
+app.get("/image", function (req, res) {
+  res.sendFile(`image.html`, { root: __dirname });
+});
+
+app.post("/api/image", async function (req, res) {
+  console.log(req.body);
+  shortpoll_id = Math.random().toString(36).substring(7);
+  while (shortpolls[shortpoll_id]) {
+    shortpoll_id = Math.random().toString(36).substring(7);
+  }
+  shortpolls[shortpoll_id] = {
+    completion: "incomplete",
+  };
+  res.send({ shortpoll: shortpoll_id });
+  try {
+    let response = await openai.createImage({
+      prompt: req.body.prompt,
+      n: 1,
+      size: "256x256",
+    });
+    console.log(response.data);
+    image_url = response.data.data[0].url;
+    shortpolls[shortpoll_id] = {
+      image_url: image_url,
+      completion: "full",
+    };
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.post("/api/chat", function (req, res) {
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {
     res.status(500).send("Token limit exceeded.");
     return;

@@ -208,7 +208,7 @@ const get_ai_api = async function (context, system) {
   }
   shortpoll_id = null;
   let output = null;
-  fetch("/api/ai", {
+  fetch("/api/chat", {
     method: "POST",
     headers: {
       Accept: "application/json",
