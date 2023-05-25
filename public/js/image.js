@@ -14,11 +14,11 @@ renderHistory = () => {
     promptDiv.innerText = item.prompt;
     promptDiv.classList.add("prompt");
     promptDiv.classList.add("bg-secondary");
-    promptDiv.classList.add("p-4");
+    promptDiv.classList.add("py-4");
     outputDiv.appendChild(promptDiv);
     const responseDiv = document.createElement("div");
     responseDiv.classList.add("response");
-    responseDiv.classList.add("p-4");
+    responseDiv.classList.add("py-4");
     const responseImg = document.createElement("img");
     responseImg.src = item.response;
     responseDiv.appendChild(responseImg);

@@ -7,3 +7,13 @@
   height: 20px;
   width: 20px;
 }
+
+.response {
+  padding-left: 200px;
+  padding-right: 200px;
+}
+
+.prompt {
+  padding-left: 200px;
+  padding-right: 200px;
+}

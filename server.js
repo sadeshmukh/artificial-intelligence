@@ -1,13 +1,15 @@
 express = require("express");
 bodyParser = require("body-parser");
+cookieParser = require("cookie-parser");
 app = express();
 app.use(bodyParser.json());
 app.use(express.static(__dirname + "/public"));
+app.use(cookieParser());
 
-const { response } = require("express");
 const { Configuration, OpenAIApi } = require("openai");
 
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
+const valid_tokens = process.env.VALID_TOKENS.split(",");
 
 const openai = new OpenAIApi(configuration);
 
@@ -48,8 +50,30 @@ app.get("/image", function (req, res) {
   res.sendFile(`image.html`, { root: __dirname });
 });
 
+app.post("/setToken", function (req, res) {
+  console.log(req.body);
+  console.log(valid_tokens);
+  if (!valid_tokens.includes(req.body.token)) {
+    res.status(401).send("Invalid token.");
+    return;
+  }
+  res.cookie("token", req.body.token, {
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+    httpOnly: true,
+  });
+  res.send("Token set.");
+});
+
 app.post("/api/image", async function (req, res) {
   console.log(req.body);
+  if (!req.cookies.token) {
+    res.status(401).send("No token set.");
+    return;
+  }
+  if (!valid_tokens.includes(req.cookies.token)) {
+    res.status(401).send("Invalid token.");
+    return;
+  }
   shortpoll_id = Math.random().toString(36).substring(7);
   while (shortpolls[shortpoll_id]) {
     shortpoll_id = Math.random().toString(36).substring(7);
@@ -76,6 +100,14 @@ app.post("/api/image", async function (req, res) {
 });
 
 app.post("/api/chat", function (req, res) {
+  if (!req.cookies.token) {
+    res.status(401).send("No token set.");
+    return;
+  }
+  if (!valid_tokens.includes(req.cookies.token)) {
+    res.status(401).send("Invalid token.");
+    return;
+  }
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {
     res.status(500).send("Token limit exceeded.");
     return;
@@ -109,6 +141,14 @@ app.post("/api/chat", function (req, res) {
 });
 
 app.post("/api/shortpoll", function (req, res) {
+  if (!req.cookies.token) {
+    res.status(401).send("No token set.");
+    return;
+  }
+  if (!valid_tokens.includes(req.cookies.token)) {
+    res.status(401).send("Invalid token.");
+    return;
+  }
   console.log(shortpolls);
   console.log(req.body);
   if (token_usage >= GLOBAL_TOKEN_LIMIT) {
@@ -132,15 +172,6 @@ app.post("/api/shortpoll", function (req, res) {
 });
 
 app.get("/api/upper", function (req, res) {
-  console.log(req.body);
-  try {
-    res.send({ response: req.body.text.toUpperCase() });
-  } catch {
-    res.send({ response: "Error" });
-  }
-});
-
-app.post("/api/upper", function (req, res) {
   console.log(req.body);
   try {
     res.send({ response: req.body.text.toUpperCase() });

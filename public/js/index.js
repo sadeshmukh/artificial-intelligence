@@ -208,6 +208,7 @@ const get_ai_api = async function (context, system) {
   }
   shortpoll_id = null;
   let output = null;
+  let isError = false;
   fetch("/api/chat", {
     method: "POST",
     headers: {
@@ -219,9 +220,17 @@ const get_ai_api = async function (context, system) {
     }),
   })
     .then((response) => {
+      if (response.status !== 200) {
+        alert("There was an error. Please try again.");
+        isError = true;
+        return;
+      }
       return response.json();
     })
     .then((response) => {
+      if (!response) {
+        return;
+      }
       shortpoll_id = response.shortpoll;
       let shortpollInterval = setInterval(() => {
         fetch("/api/shortpoll", {
@@ -269,6 +278,9 @@ const get_ai_api = async function (context, system) {
       }, 5000);
     });
   while (!output) {
+    if (isError) {
+      return "There was an error. Please try again.";
+    }
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
@@ -345,3 +357,19 @@ function renderOutput() {
     outputDiv.appendChild(messageDiv);
   });
 }
+
+const updateToken = (e) => {
+  e.preventDefault();
+  const tokenInput = document.getElementById("tokenInput");
+  let serverToken = tokenInput.value;
+
+  fetch("/setToken", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      token: serverToken,
+    }),
+  });
+};
