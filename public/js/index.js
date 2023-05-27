@@ -69,6 +69,10 @@ const resetContext = (event) => {
   globalContext = [];
   localStorage.setItem("globalContext", JSON.stringify(globalContext));
   tokenusage = 0;
+  tokenUsageSpan.innerHTML = `Token usage: ${tokenusage} (approximately ${Math.round(
+    tokenusage / 5000,
+    2
+  )} cents)`;
   localStorage.setItem("tokenusage", tokenusage);
   renderOutput();
 };
@@ -220,9 +224,7 @@ const get_ai_api = async function (context, system) {
     }),
   })
     .then((response) => {
-      if (response.status !== 200) {
-        alert("There was an error. Please try again.");
-        isError = true;
+      if (response === "Incomplete shortpoll") {
         return;
       }
       return response.json();
@@ -324,11 +326,16 @@ const onChatSubmit = function (event) {
   addGlobalContext({ role: "user", content: chatInput.innerText });
   chatInput.innerText = "";
   get_ai_api(globalContext, globalSystemMessage).then((response) => {
+    if (response === "There was an error. Please try again.") {
+      globalContext.pop();
+      renderOutput();
+    } else {
+      addGlobalContext({
+        role: "assistant",
+        content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
+      });
+    }
     console.log(response.replace(/(?:\r\n|\r|\n)/g, "<br>"));
-    addGlobalContext({
-      role: "assistant",
-      content: response.replace(/(?:\r\n|\r|\n)/g, "<br>"),
-    });
 
     chatSubmitButton.disabled = false;
     loadingSpinner.hidden = true;

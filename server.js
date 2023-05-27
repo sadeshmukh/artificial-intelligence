@@ -5,11 +5,28 @@ app = express();
 app.use(bodyParser.json());
 app.use(express.static(__dirname + "/public"));
 app.use(cookieParser());
+const admin = require("firebase-admin");
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  }),
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
+});
+
+const db = admin.database();
+const tokenRef = db.ref("tokens");
+let valid_tokens = [];
+tokenRef.once("value").then((snapshot) => {
+  valid_tokens = snapshot.val();
+  console.log(valid_tokens);
+});
 
 const { Configuration, OpenAIApi } = require("openai");
 
 const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-const valid_tokens = process.env.VALID_TOKENS.split(",");
+// const valid_tokens = process.env.VALID_TOKENS.split(",");
 
 const openai = new OpenAIApi(configuration);
 
