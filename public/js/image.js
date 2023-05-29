@@ -2,11 +2,6 @@ const chatInput = document.getElementById("chatInput");
 const outputDiv = document.getElementById("outputDiv");
 const chatSubmitButton = document.getElementById("chatSubmit");
 const loadingSpinner = document.getElementById("loadingSpinner");
-
-let history = []; // Format: [{prompt: "prompt", response: "url"}, ...}]
-if (localStorage.getItem("history")) {
-  history = JSON.parse(localStorage.getItem("history"));
-}
 renderHistory = () => {
   outputDiv.innerHTML = "";
   history.forEach((item) => {
@@ -25,7 +20,11 @@ renderHistory = () => {
     outputDiv.appendChild(responseDiv);
   });
 };
-renderHistory();
+let history = []; // Format: [{prompt: "prompt", response: "url"}, ...}]
+if (localStorage.getItem("history")) {
+  history = JSON.parse(localStorage.getItem("history"));
+  renderHistory();
+}
 
 var ce = document.querySelector("[contenteditable]");
 ce.addEventListener("paste", function (e) {
@@ -41,15 +40,31 @@ ce.addEventListener("paste", function (e) {
 
 async function getAIImage(prompt) {
   url = null;
+  isError = false;
   fetch("/api/image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: prompt }),
   })
     .then((response) => {
+      if (response === "Incomplete shortpoll") {
+        return;
+      }
+      if (response.status !== 200) {
+        if (response.status === 401) {
+          alert("Unauthorized. Please check your token.");
+        } else {
+          alert("There was an error with the AI API. Please try again later.");
+        }
+        isError = true;
+        return;
+      }
       return response.json();
     })
     .then(async (data) => {
+      if (!data) {
+        return;
+      }
       if (data.shortpoll) {
         const shortpoll_id = data.shortpoll;
         const interval = setInterval(() => {
@@ -71,6 +86,9 @@ async function getAIImage(prompt) {
     });
   while (!url) {
     await new Promise((r) => setTimeout(r, 500));
+    if (isError) {
+      return "There was an error. Please try again.";
+    }
   }
   console.log("url: " + url);
   return url;
@@ -88,6 +106,11 @@ function onChatSubmit(event) {
   const prompt = chatInput.innerText;
   chatInput.innerText = "";
   getAIImage(prompt).then((url) => {
+    if (url === "There was an error. Please try again.") {
+      loadingSpinner.hidden = true;
+      chatSubmitButton.disabled = false;
+      return;
+    }
     console.log("url: " + url);
     history.push({ prompt: prompt, response: url });
     localStorage.setItem("history", JSON.stringify(history));

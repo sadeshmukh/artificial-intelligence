@@ -227,6 +227,15 @@ const get_ai_api = async function (context, system) {
       if (response === "Incomplete shortpoll") {
         return;
       }
+      if (response.status !== 200) {
+        if (response.status === 401) {
+          alert("Unauthorized. Please check your token.");
+        } else {
+          alert("There was an error with the AI API. Please try again later.");
+        }
+        isError = true;
+        return;
+      }
       return response.json();
     })
     .then((response) => {
