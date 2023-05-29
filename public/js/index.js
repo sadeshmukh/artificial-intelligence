@@ -263,18 +263,6 @@ const get_ai_api = async function (context, system) {
     }),
   })
     .then((response) => {
-      if (response === "Incomplete shortpoll") {
-        return;
-      }
-      if (response.status !== 200) {
-        if (response.status === 401) {
-          alert("Unauthorized. Please check your token.");
-        } else {
-          alert("There was an error with the AI API. Please try again later.");
-        }
-        isError = true;
-        return;
-      }
       return response.json();
     })
     .then((response) => {
@@ -294,15 +282,30 @@ const get_ai_api = async function (context, system) {
           }),
         })
           .then((response) => {
-            try {
-              return response.json();
-            } catch (error) {
-              console.log("polling...");
+            if (response === "Incomplete shortpoll") {
+              console.log("Incomplete shortpoll");
               return;
             }
-          })
+            if (response.status !== 200 && response.status !== 202) {
+              if (response.status === 401) {
+                alert("Unauthorized. Please check your token.");
+              } else {
+                alert(
+                  "There was an error with the AI API. Please try again later."
+                );
+              }
+              isError = true;
+              return;
+            }
 
+            json_response = response.json();
+            return json_response;
+          })
           .then((response) => {
+            if (!response) {
+              return;
+            }
+            console.log("WHAT'S UP THIS IS THE RESPONSE");
             if (response.completion !== "full") {
               console.log("polling...");
               return;
